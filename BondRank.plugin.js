@@ -1,14 +1,14 @@
 /**
  * @name BondRank
  * @author Personal
- * @version 2.2.0
+ * @version 2.2.2
  * @description Discord 1대1 DM 헤더에 로컬 전용 인연 Rank 배지를 표시합니다.
  */
 
 module.exports = class BondRank {
     constructor() {
         this.pluginName = "BondRank";
-        this.version = "2.2.0";
+        this.version = "2.2.2";
         this.styleId = "bond-rank-style";
         this.headerBadgeClass = "bond-rank-header-badge";
         this.headerWrapSelector = '[data-bond-rank-header-wrap="true"]';
@@ -36,7 +36,7 @@ module.exports = class BondRank {
     }
 
     start() {
-        console.log("[BondRank] started v2.2.0");
+        console.log("[BondRank] started v2.2.2");
         this.loadSettings();
         this.loadData();
         this.injectStyles();
@@ -272,8 +272,11 @@ module.exports = class BondRank {
         const text = document.createElement("span");
         text.className = "bond-rank-exp-text";
 
+        const tooltip = document.createElement("span");
+        tooltip.className = "bond-rank-exp-tooltip";
+
         bar.appendChild(fill);
-        expWrap.append(bar, text);
+        expWrap.append(bar, text, tooltip);
         wrapper.append(badge, expWrap);
         this.updateHeaderWrap(wrapper, progress);
 
@@ -283,14 +286,39 @@ module.exports = class BondRank {
     updateHeaderWrap(wrapper, progress) {
         const badge = wrapper.querySelector(`.${this.headerBadgeClass}`);
         const expWrap = wrapper.querySelector(".bond-rank-exp-wrap");
+        const bar = wrapper.querySelector(".bond-rank-exp-bar");
         const fill = wrapper.querySelector(".bond-rank-exp-fill");
         const text = wrapper.querySelector(".bond-rank-exp-text");
+        const tooltip = wrapper.querySelector(".bond-rank-exp-tooltip");
 
         if (badge) badge.textContent = `인연 Rank ${progress.rank}`;
 
         if (expWrap) expWrap.style.display = this.settings.showHeaderExpBar ? "inline-flex" : "none";
         if (fill) fill.style.width = `${progress.progressPercent}%`;
         if (text) text.textContent = `${progress.bondExp} / ${progress.nextRankExp} EXP`;
+        if (tooltip) this.updateExpTooltip(tooltip, progress);
+
+        const tooltipTitle = this.getExpTooltipLines(progress).join("\n");
+        if (expWrap) expWrap.title = tooltipTitle;
+        if (bar) bar.title = tooltipTitle;
+    }
+
+    getExpTooltipLines(progress) {
+        return [
+            `Rank ${progress.rank} → Rank ${progress.rank + 1}`,
+            `EXP ${progress.bondExp} / ${progress.nextRankExp}`,
+            `진행률 ${progress.progressPercent}%`
+        ];
+    }
+
+    updateExpTooltip(tooltip, progress) {
+        const lines = this.getExpTooltipLines(progress);
+        tooltip.replaceChildren();
+
+        lines.forEach((line, index) => {
+            if (index > 0) tooltip.appendChild(document.createElement("br"));
+            tooltip.appendChild(document.createTextNode(line));
+        });
     }
 
     scheduleRender() {
@@ -390,6 +418,7 @@ module.exports = class BondRank {
   gap: 6px !important;
   height: 20px !important;
   flex-shrink: 0 !important;
+  position: relative !important;
 }
 
 .bond-rank-exp-bar {
@@ -398,8 +427,8 @@ module.exports = class BondRank {
   height: 7px !important;
   border-radius: 999px !important;
   overflow: hidden !important;
-  background: rgba(120, 120, 140, 0.28) !important;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08) !important;
+  background: rgba(168, 85, 247, 0.18) !important;
+  box-shadow: inset 0 0 0 1px rgba(236,72,153,0.18) !important;
 }
 
 .bond-rank-exp-fill {
@@ -409,7 +438,8 @@ module.exports = class BondRank {
   height: 100% !important;
   width: 0% !important;
   border-radius: 999px !important;
-  background: linear-gradient(90deg, #60a5fa, #a855f7, #ec4899) !important;
+  background: linear-gradient(90deg, #a855f7, #ec4899) !important;
+  box-shadow: 0 0 8px rgba(236,72,153,.45) !important;
   transition: width 0.25s ease !important;
 }
 
@@ -418,6 +448,33 @@ module.exports = class BondRank {
   font-weight: 700 !important;
   color: rgba(255,255,255,0.82) !important;
   white-space: nowrap !important;
+}
+
+.bond-rank-exp-tooltip {
+  position: absolute !important;
+  left: 50% !important;
+  top: calc(100% + 8px) !important;
+  transform: translateX(-50%) translateY(-2px) !important;
+  min-width: 150px !important;
+  padding: 8px 10px !important;
+  border-radius: 10px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  line-height: 1.45 !important;
+  color: white !important;
+  background: rgba(20, 20, 30, 0.94) !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.15s ease, transform 0.15s ease !important;
+  z-index: 999999 !important;
+  white-space: nowrap !important;
+}
+
+.bond-rank-exp-wrap:hover .bond-rank-exp-tooltip {
+  opacity: 1 !important;
+  transform: translateX(-50%) translateY(2px) !important;
 }
 
 .bond-rank-settings {
